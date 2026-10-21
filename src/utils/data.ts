@@ -551,7 +551,7 @@ const matchInfo = (scriptInfo: string) => {
 
   return infos as Record<keyof typeof INFO_NAMES, string>
 }
-export const addUserApi = async(script: string): Promise<LX.UserApi.UserApiInfo> => {
+export const addUserApi = async(script: string, importUrl?: string): Promise<LX.UserApi.UserApiInfo> => {
   const result = /^\/\*[\S|\s]+?\*\//.exec(script)
   if (!result) throw new Error(global.i18n.t('user_api_add_failed_tip'))
 
@@ -563,6 +563,7 @@ export const addUserApi = async(script: string): Promise<LX.UserApi.UserApiInfo>
     ...scriptInfo,
     allowShowUpdateAlert: true,
   }
+  if (importUrl) apiInfo.importUrl = importUrl
   userApis.push(apiInfo)
   await saveDataMultiple([
     [userApiPrefix, userApis],

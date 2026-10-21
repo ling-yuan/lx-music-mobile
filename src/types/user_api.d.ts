@@ -22,6 +22,7 @@ declare namespace LX {
       author: string
       homepage: string
       version: string
+      importUrl?: string
       sources?: UserApiSources
     }
 

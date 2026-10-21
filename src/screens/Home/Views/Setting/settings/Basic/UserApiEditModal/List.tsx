@@ -1,7 +1,7 @@
 import { useCallback } from 'react'
 import Text from '@/components/common/Text'
 import { View, TouchableOpacity, ScrollView } from 'react-native'
-import { confirmDialog, createStyle } from '@/utils/tools'
+import { clipboardWriteText, confirmDialog, createStyle, toast } from '@/utils/tools'
 import { useTheme } from '@/store/theme/hook'
 import { useI18n } from '@/lang'
 import { useUserApiList, state as userApiState } from '@/store/userApi'
@@ -31,12 +31,34 @@ const ListItem = ({ item, activeId, onRemove, onChangeAllowShowUpdateAlert }: {
   const handleRemove = () => {
     onRemove(item.id, item.name)
   }
+  const handleShowImportUrl = () => {
+    const url = item.importUrl
+    if (!url) return
+    void confirmDialog({
+      title: item.name,
+      message: url,
+      confirmButtonText: t('user_api_import_url_copy'),
+      cancelButtonText: t('close'),
+    }).then(confirm => {
+      if (!confirm) return
+      clipboardWriteText(url)
+      toast(t('copy_name_tip'))
+    })
+  }
 
   return (
     <View style={{ ...styles.listItem, backgroundColor: activeId == item.id ? theme['c-primary-background-active'] : 'transparent' }}>
       <View style={styles.listItemLeft}>
         <Text size={14}>
-          {item.name}
+          {
+            item.importUrl
+              ? (
+                  <Text size={14} color={theme['c-primary-font']} style={styles.importUrlName} onPress={handleShowImportUrl}>
+                    {item.name}
+                  </Text>
+                )
+              : item.name
+          }
           {
             item.version ? (
               <Text size={12} color={theme['c-font-label']}>{ '   ' + formatVersionName(item.version) }</Text>
@@ -143,6 +165,9 @@ const styles = createStyle({
     paddingRight: 10,
     flex: 1,
     gap: 2,
+  },
+  importUrlName: {
+    textDecorationLine: 'underline',
   },
   listItemRight: {
     flex: 0,
