@@ -26,4 +26,3 @@ buildscript {
 }
 
 apply plugin: "com.facebook.react.rootproject"
-apply from: "rear-screen-param.gradle"
