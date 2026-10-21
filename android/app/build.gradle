@@ -108,9 +108,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace "cn.kuwo.player"
+    namespace "cn.toside.music.mobile"
     defaultConfig {
-        applicationId "cn.kuwo.player"
+        applicationId "cn.toside.music.mobile"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode verCode
