@@ -31,34 +31,20 @@ const ListItem = ({ item, activeId, onRemove, onChangeAllowShowUpdateAlert }: {
   const handleRemove = () => {
     onRemove(item.id, item.name)
   }
-  const handleShowImportUrl = () => {
-    const url = item.importUrl
-    if (!url) return
-    void confirmDialog({
-      title: item.name,
-      message: url,
-      confirmButtonText: t('user_api_import_url_copy'),
-      cancelButtonText: t('close'),
-    }).then(confirm => {
-      if (!confirm) return
-      clipboardWriteText(url)
-      toast(t('copy_name_tip'))
-    })
+  const handleCopyImportUrl = () => {
+    if (item.importUrl) {
+      clipboardWriteText(item.importUrl)
+      toast(t('user_api_import_url_copied'))
+      return
+    }
+    toast(t('user_api_import_url_file'))
   }
 
   return (
     <View style={{ ...styles.listItem, backgroundColor: activeId == item.id ? theme['c-primary-background-active'] : 'transparent' }}>
       <View style={styles.listItemLeft}>
         <Text size={14}>
-          {
-            item.importUrl
-              ? (
-                  <Text size={14} color={theme['c-primary-font']} style={styles.importUrlName} onPress={handleShowImportUrl}>
-                    {item.name}
-                  </Text>
-                )
-              : item.name
-          }
+          <Text size={14} onPress={handleCopyImportUrl}>{item.name}</Text>
           {
             item.version ? (
               <Text size={12} color={theme['c-font-label']}>{ '   ' + formatVersionName(item.version) }</Text>
@@ -165,9 +151,6 @@ const styles = createStyle({
     paddingRight: 10,
     flex: 1,
     gap: 2,
-  },
-  importUrlName: {
-    textDecorationLine: 'underline',
   },
   listItemRight: {
     flex: 0,
