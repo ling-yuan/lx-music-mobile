@@ -265,6 +265,19 @@ const handlePlay = async() => {
   debouncePlay(musicInfo)
 }
 
+// 手动点歌时把该歌曲移到已播放列表末尾。
+// 下一首不再复用旧的后继记录，随机模式会开启新链路。
+// 其余历史仍保留，上一首可以回退。
+const movePlayedInfoToEnd = (listId: string | null, id: string) => {
+  const playedList = playerState.playedList
+  let index = playedList.findIndex(m => m.listId == listId && m.musicInfo.id == id)
+  if (index < 0) index = playedList.findIndex(m => m.musicInfo.id == id)
+  if (index < 0 || index === playedList.length - 1) return
+  const info = playedList[index]
+  removePlayedList(index)
+  addPlayedList(info)
+}
+
 /**
  * 播放列表内歌曲
  * @param listId 列表id
@@ -277,6 +290,7 @@ export const playListById = async(listId: string, id: string) => {
   if (!musicInfo) return
   setPlayMusicInfo(listId, musicInfo)
   if (settingState.setting['player.isAutoCleanPlayedList'] || prevListId != listId) clearPlayedList()
+  else movePlayedInfoToEnd(listId, musicInfo.id)
   clearTempPlayeList()
   await handlePlay()
 }
@@ -289,8 +303,10 @@ export const playListById = async(listId: string, id: string) => {
 export const playList = async(listId: string, index: number) => {
   const prevListId = playerState.playInfo.playerListId
   setPlayListId(listId)
-  setPlayMusicInfo(listId, getList(listId)[index])
+  const musicInfo = getList(listId)[index]
+  setPlayMusicInfo(listId, musicInfo)
   if (settingState.setting['player.isAutoCleanPlayedList'] || prevListId != listId) clearPlayedList()
+  else if (musicInfo) movePlayedInfoToEnd(listId, musicInfo.id)
   clearTempPlayeList()
   await handlePlay()
 }
