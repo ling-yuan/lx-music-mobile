@@ -60,6 +60,31 @@ const createDelayNextTimeout = (delay: number) => {
 const { addDelayNextTimeout, clearDelayNextTimeout } = createDelayNextTimeout(5000)
 const { addDelayNextTimeout: addLoadTimeout, clearDelayNextTimeout: clearLoadTimeout } = createDelayNextTimeout(100000)
 
+let lyricRequestRevision = 0
+let resolvedLyricSource: { originalId: string, musicInfo: LX.Music.MusicInfoOnline } | null = null
+const loadCurrentLyric = async(musicInfo: LX.Music.MusicInfo | LX.Download.ListItem) => {
+  const revision = ++lyricRequestRevision
+  const target = resolvedLyricSource?.originalId == musicInfo.id ? resolvedLyricSource.musicInfo : musicInfo
+  if (target.id != musicInfo.id) {
+    setMusicInfo({ lrc: null, tlrc: null, lxlrc: null, rlrc: null, rawlrc: null })
+    global.app_event.lyricUpdated()
+  }
+  try {
+    const lyricInfo = await getLyricInfo({ musicInfo: target })
+    if (revision != lyricRequestRevision || musicInfo.id != playerState.playMusicInfo.musicInfo?.id) return
+    setMusicInfo({ lrc: lyricInfo.lyric, tlrc: lyricInfo.tlyric, lxlrc: lyricInfo.lxlyric, rlrc: lyricInfo.rlyric, rawlrc: lyricInfo.rawlrcInfo.lyric })
+    global.app_event.lyricUpdated()
+  } catch (err) {
+    if (revision != lyricRequestRevision || musicInfo.id != playerState.playMusicInfo.musicInfo?.id) return
+    if (target != musicInfo) {
+      setMusicInfo({ lrc: null, tlrc: null, lxlrc: null, rlrc: null, rawlrc: null })
+      global.app_event.lyricUpdated()
+    }
+    console.log(err)
+    setStatusText(global.i18n.t('lyric__load_error'))
+  }
+}
+
 const createGettingUrlId = (musicInfo: LX.Music.MusicInfo | LX.Download.ListItem) => {
   const tInfo = 'progress' in musicInfo ? musicInfo.metadata.musicInfo.meta.toggleMusicInfo : musicInfo.meta.toggleMusicInfo
   return `${musicInfo.id}_${tInfo?.id ?? ''}`
@@ -110,10 +135,16 @@ const getMusicPlayUrl = async(musicInfo: LX.Music.MusicInfo | LX.Download.ListIt
     musicInfo: toggleMusicInfo,
     isRefresh,
     allowToggleSource: false,
+    onResolvedSource(target) {
+      if (!diffCurrentMusicInfo(musicInfo)) resolvedLyricSource = { originalId: musicInfo.id, musicInfo: target }
+    },
   }) : Promise.reject(new Error('not found'))).catch(async() => {
     return getMusicUrl({
       musicInfo,
       isRefresh,
+      onResolvedSource(target) {
+        if (!diffCurrentMusicInfo(musicInfo)) resolvedLyricSource = { originalId: musicInfo.id, musicInfo: target }
+      },
       onToggleSource(mInfo) {
         if (diffCurrentMusicInfo(musicInfo)) return
         setStatusText(global.i18n.t('toggle_source_try'))
@@ -142,8 +173,10 @@ export const setMusicUrl = (musicInfo: LX.Music.MusicInfo | LX.Download.ListItem
   if (!diffCurrentMusicInfo(musicInfo)) return
   if (cancelDelayRetry) cancelDelayRetry()
   global.lx.gettingUrlId = createGettingUrlId(musicInfo)
+  resolvedLyricSource = null
   void getMusicPlayUrl(musicInfo, isRefresh).then((url) => {
     if (!url) return
+    void loadCurrentLyric(musicInfo)
     setResource(musicInfo, url, playerState.progress.nowPlayTime)
   }).catch((err: any) => {
     console.log(err)
@@ -181,21 +214,7 @@ const handleRestorePlay = async(restorePlayInfo: LX.Player.SavedPlayInfo) => {
     global.app_event.picUpdated()
   })
 
-  void getLyricInfo({ musicInfo }).then((lyricInfo) => {
-    if (musicInfo.id != playMusicInfo.musicInfo?.id) return
-    setMusicInfo({
-      lrc: lyricInfo.lyric,
-      tlrc: lyricInfo.tlyric,
-      lxlrc: lyricInfo.lxlyric,
-      rlrc: lyricInfo.rlyric,
-      rawlrc: lyricInfo.rawlrcInfo.lyric,
-    })
-    global.app_event.lyricUpdated()
-  }).catch((err) => {
-    console.log(err)
-    if (musicInfo.id != playMusicInfo.musicInfo?.id) return
-    setStatusText(global.i18n.t('lyric__load_error'))
-  })
+  void loadCurrentLyric(musicInfo)
 
   if (settingState.setting['player.togglePlayMethod'] == 'random' && !playMusicInfo.isTempPlay) addPlayedList(playMusicInfo as LX.Player.PlayMusicInfo)
 }
@@ -213,21 +232,7 @@ const debouncePlay = debounceBackgroundTimer((musicInfo: LX.Player.PlayMusic) =>
     global.app_event.picUpdated()
   })
 
-  void getLyricInfo({ musicInfo }).then((lyricInfo) => {
-    if (musicInfo.id != playerState.playMusicInfo.musicInfo?.id) return
-    setMusicInfo({
-      lrc: lyricInfo.lyric,
-      tlrc: lyricInfo.tlyric,
-      lxlrc: lyricInfo.lxlyric,
-      rlrc: lyricInfo.rlyric,
-      rawlrc: lyricInfo.rawlrcInfo.lyric,
-    })
-    global.app_event.lyricUpdated()
-  }).catch((err) => {
-    console.log(err)
-    if (musicInfo.id != playerState.playMusicInfo.musicInfo?.id) return
-    setStatusText(global.i18n.t('lyric__load_error'))
-  })
+  void loadCurrentLyric(musicInfo)
 }, 200)
 
 // 处理音乐播放

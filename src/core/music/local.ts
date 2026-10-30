@@ -66,11 +66,12 @@ const getOtherSourceByLocal = async<T>(musicInfo: LX.Music.MusicInfoLocal, handl
   throw new Error('source not found')
 }
 
-export const getMusicUrl = async({ musicInfo, isRefresh, allowToggleSource = true, onToggleSource = () => {} }: {
+export const getMusicUrl = async({ musicInfo, isRefresh, allowToggleSource = true, onToggleSource = () => {}, onResolvedSource }: {
   musicInfo: LX.Music.MusicInfoLocal
   isRefresh: boolean
   onToggleSource?: (musicInfo?: LX.Music.MusicInfoOnline) => void
   allowToggleSource?: boolean
+  onResolvedSource?: (musicInfo: LX.Music.MusicInfoOnline) => void
 }): Promise<string> => {
   if (!isRefresh) {
     const path = await getLocalFilePath(musicInfo)
@@ -90,6 +91,7 @@ export const getMusicUrl = async({ musicInfo, isRefresh, allowToggleSource = tru
   onToggleSource()
   return getOtherSourceByLocal(musicInfo, async(otherSource) => {
     return getOnlineOtherSourceMusicUrl({ musicInfos: [...otherSource], onToggleSource, isRefresh }).then(({ url, quality: targetQuality, musicInfo: targetMusicInfo, isFromCache }) => {
+      onResolvedSource?.(targetMusicInfo)
       // saveLyric(musicInfo, data.lyricInfo)
       if (!isFromCache) void saveMusicUrl(targetMusicInfo, targetQuality, url)
 

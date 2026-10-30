@@ -346,10 +346,12 @@ export const hasMusicUrlByMusic = async(musicInfo: LX.Music.MusicInfo) => {
   })
 }
 export const clearMusicUrlByMusic = async(musicInfo: LX.Music.MusicInfo) => {
-  await removeDataMultiple(qualitys.map(q => `${storageDataPrefix.musicUrl}${musicInfo.id}_${q}`))
+  await removeDataMultiple(qualitys.flatMap(q => [`${storageDataPrefix.musicUrl}${musicInfo.id}_${q}`, `${storageDataPrefix.musicUrl}${musicInfo.id}_${q}_source`]))
 }
 export const getMusicUrl = async(musicInfo: LX.Music.MusicInfo, type: LX.Quality) => getData<string>(`${storageDataPrefix.musicUrl}${musicInfo.id}_${type}`).then((url) => url ?? '')
 export const saveMusicUrl = async(musicInfo: LX.Music.MusicInfo, type: LX.Quality, url: string) => saveData(`${storageDataPrefix.musicUrl}${musicInfo.id}_${type}`, url)
+export const getMusicUrlSource = async(musicInfo: LX.Music.MusicInfo, type: LX.Quality): Promise<{ url: string, musicInfo: LX.Music.MusicInfoOnline } | null> => getData(`${storageDataPrefix.musicUrl}${musicInfo.id}_${type}_source`)
+export const saveMusicUrlSource = async(musicInfo: LX.Music.MusicInfo, type: LX.Quality, url: string, source: LX.Music.MusicInfoOnline) => saveData(`${storageDataPrefix.musicUrl}${musicInfo.id}_${type}_source`, { url, musicInfo: source })
 export const clearMusicUrl = async(keys?: string[]) => {
   if (!keys) keys = (await getAllKeys()).filter(key => key.startsWith(storageDataPrefix.musicUrl))
   await removeDataMultiple(keys)

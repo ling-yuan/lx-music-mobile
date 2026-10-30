@@ -46,8 +46,8 @@ public final class LyricSwitchView extends TextSwitcher {
 //      }
     } else {
       viewArray = new ArrayList<>(2);
-      textView = new TextView(context);
-      textView2 = new TextView(context);
+      textView = new KaraokeTextView(context);
+      textView2 = new KaraokeTextView(context);
       viewArray.add(textView);
       viewArray.add(textView2);
       for (TextView v : viewArray) {
@@ -153,6 +153,15 @@ public final class LyricSwitchView extends TextSwitcher {
 
   public void setTextColor(int i) {
     for (TextView v : viewArray) v.setTextColor(i);
+  }
+
+  public void setKaraokeColors(int unplayed, int played) {
+    for (TextView view : viewArray) ((KaraokeTextView) view).setKaraokeColors(unplayed, played);
+  }
+
+  public void setLyricTime(int time) {
+    View current = getCurrentView();
+    if (current instanceof KaraokeTextView) ((KaraokeTextView) current).setLyricTime(time);
   }
 
   public void setShadowColor(int i) {

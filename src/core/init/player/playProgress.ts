@@ -9,6 +9,8 @@ import playerState from '@/store/player/state'
 import settingState from '@/store/setting/state'
 import { onScreenStateChange } from '@/utils/nativeModules/utils'
 import { AppState } from 'react-native'
+import { handlePlay as playLyric, pause as pauseLyric } from '@/core/lyric'
+import { syncKaraoke } from '@/utils/nativeModules/lyricDesktop'
 
 const delaySavePlayInfo = throttleBackgroundTimer(() => {
   void savePlayInfo({
@@ -25,6 +27,7 @@ export default () => {
   let updateTimeout: number | null = null
 
   let isScreenOn = true
+  let seekRevision = 0
 
   const getCurrentTime = () => {
     let id = playerState.musicInfo.id
@@ -74,7 +77,16 @@ export default () => {
     if (!playerState.musicInfo.id) return
     // console.log('setProgress', time, maxTime)
     setNowPlayTime(time)
-    void setCurrentTime(time)
+    const id = playerState.musicInfo.id
+    const revision = ++seekRevision
+    void setCurrentTime(time).then(async() => {
+      const position = await getPosition()
+      if (revision != seekRevision || id != playerState.musicInfo.id) return
+      await syncKaraoke(position * 1000, playerState.isPlay, settingState.setting['player.playbackRate'])
+      if (revision != seekRevision || id != playerState.musicInfo.id) return
+      playLyric(position * 1000)
+      if (!playerState.isPlay) pauseLyric()
+    }).catch(() => {})
 
     if (maxTime != null) setMaxplayTime(maxTime)
 
@@ -113,6 +125,7 @@ export default () => {
 
 
   const handleSetPlayInfo = () => {
+    seekRevision++
     // restorePlayTime = playProgress.nowPlayTime
     // void setCurrentTime(playerState.progress.nowPlayTime)
     // setMaxplayTime(playProgress.maxPlayTime)
