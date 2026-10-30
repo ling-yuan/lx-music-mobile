@@ -1,7 +1,9 @@
 import { action, state } from '@/store/userApi'
 import { addUserApi, getUserApiScript, removeUserApi as removeUserApiFromStore, setUserApiAllowShowUpdateAlert as setUserApiAllowShowUpdateAlertFromStore } from '@/utils/data'
-import { destroy, loadScript } from '@/utils/nativeModules/userApi'
+import { destroy, getFallbackMusicUrl, loadScript } from '@/utils/nativeModules/userApi'
 import { log as writeLog } from '@/utils/log'
+import settingState from '@/store/setting/state'
+import { requestMsg } from '@/utils/message'
 
 
 export const setUserApi = async(apiId: string) => {
@@ -16,6 +18,40 @@ export const setUserApi = async(apiId: string) => {
 
 export const destroyUserApi = () => {
   destroy()
+}
+
+export const getOtherUserApiMusicUrl = async(musicInfo: LX.Music.MusicInfo, qualitys: LX.Quality[], apiId: string): Promise<{ url: string, type: LX.Quality }> => {
+  if (!apiId.startsWith('user_api')) throw new Error('source not supported')
+  // Snapshot the list so imports or removals do not reorder an in-flight fallback.
+  const candidates = state.list.filter(api => api.id != apiId)
+  const controller = new AbortController()
+  const cancel = () => { controller.abort() }
+  const checkCanceled = () => {
+    if (controller.signal.aborted || settingState.setting['common.apiSource'] != apiId) throw new Error(requestMsg.cancelRequest)
+  }
+  global.app_event.on('musicToggled', cancel)
+  global.app_event.on('stop', cancel)
+  global.state_event.on('apiSourceUpdated', cancel)
+  try {
+    for (const api of candidates) {
+      checkCanceled()
+      try {
+        const script = await getUserApiScript(api.id)
+        checkCanceled()
+        const result = await getFallbackMusicUrl({ ...api, script }, musicInfo, qualitys, controller.signal)
+        checkCanceled()
+        return result
+      } catch (err) {
+        checkCanceled()
+        if ((err as Error).message == requestMsg.cancelRequest) throw err
+      }
+    }
+    throw new Error('all user apis failed')
+  } finally {
+    global.app_event.off('musicToggled', cancel)
+    global.app_event.off('stop', cancel)
+    global.state_event.off('apiSourceUpdated', cancel)
+  }
 }
 
 

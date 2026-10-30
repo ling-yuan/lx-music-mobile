@@ -11,6 +11,7 @@ import settingState from '@/store/setting/state'
 import { requestMsg } from '@/utils/message'
 import BackgroundTimer from 'react-native-background-timer'
 import { apis } from '@/utils/musicSdk/api-source'
+import { getOtherUserApiMusicUrl } from '@/core/userApi'
 
 
 const getOtherSourcePromises = new Map()
@@ -298,6 +299,7 @@ export const handleGetOnlineMusicUrl = async({ musicInfo, quality, onToggleSourc
   if (!await global.lx.apiInitPromise[0]) throw new Error('source init failed')
   // console.log(musicInfo.source)
   const targetQuality = quality ?? getPlayQuality(settingState.setting['player.playQuality'], musicInfo)
+  const apiId = settingState.setting['common.apiSource']
 
   let reqPromise
   try {
@@ -309,7 +311,24 @@ export const handleGetOnlineMusicUrl = async({ musicInfo, quality, onToggleSourc
     return { musicInfo, url, quality: type, isFromCache: false }
   }).catch(async(err: any) => {
     console.log(err)
-    if (!allowToggleSource || err.message == requestMsg.tooManyRequests) throw err
+    if (err.message == requestMsg.cancelRequest) throw err
+    if (settingState.setting['common.apiSource'] != apiId) throw new Error(requestMsg.cancelRequest)
+    if (!apiId.startsWith('user_api') && (!allowToggleSource || err.message == requestMsg.tooManyRequests)) throw err
+    // Keep the original platform across all custom APIs before searching other platforms.
+    const preferredQuality = quality ?? settingState.setting['player.playQuality']
+    const otherApiQualitys: LX.Quality[] = quality
+      ? [quality]
+      : preferredQuality == '128k'
+        ? ['128k']
+        : [...TRY_QUALITYS_LIST.slice(TRY_QUALITYS_LIST.indexOf(preferredQuality as TryQualityType))
+            .filter(item => musicInfo.meta._qualitys[item]), '128k']
+    try {
+      const result = await getOtherUserApiMusicUrl(toOldMusicInfo(musicInfo) as LX.Music.MusicInfo, otherApiQualitys, apiId)
+      return { musicInfo, url: result.url, quality: result.type, isFromCache: false }
+    } catch (fallbackError) {
+      if (settingState.setting['common.apiSource'] != apiId || (fallbackError as Error).message == requestMsg.cancelRequest) throw fallbackError
+    }
+    if (!allowToggleSource) throw err
     onToggleSource()
     // eslint-disable-next-line @typescript-eslint/promise-function-async
     return getOtherSource(musicInfo).then(otherSource => {

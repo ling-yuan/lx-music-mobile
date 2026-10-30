@@ -10,11 +10,14 @@ import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.ReadableMap;
 import java.lang.Thread;
+import java.util.HashMap;
+import java.util.Map;
 
 public class UserApiModule extends ReactContextBaseJavaModule {
   private JavaScriptThread javaScriptThread;
   private final ReactApplicationContext reactContext;
   private UtilsEvent utilsEvent;
+  private final Map<String, JavaScriptThread> fallbackThreads = new HashMap<>();
 
   private int listenerCount = 0;
 
@@ -85,5 +88,33 @@ public class UserApiModule extends ReactContextBaseJavaModule {
     javaScriptThread.getHandler().sendEmptyMessage(HandlerWhat.DESTROY);
     javaScriptThread.stopThread();
     this.javaScriptThread = null;
+  }
+
+  @ReactMethod
+  public void loadFallbackScript(String sessionId, ReadableMap data) {
+    destroyFallbackScript(sessionId);
+    if (this.utilsEvent == null) this.utilsEvent = new UtilsEvent(this.reactContext);
+    JavaScriptThread thread = new JavaScriptThread(this.reactContext, Arguments.toBundle(data));
+    thread.prepareHandler(new JsHandler(this.reactContext.getMainLooper(), this.utilsEvent, sessionId));
+    fallbackThreads.put(sessionId, thread);
+    thread.getHandler().sendEmptyMessage(HandlerWhat.INIT);
+  }
+
+  @ReactMethod
+  public void sendFallbackAction(String sessionId, String action, String info) {
+    JavaScriptThread thread = fallbackThreads.get(sessionId);
+    if (thread == null) return;
+    Message message = thread.getHandler().obtainMessage(HandlerWhat.ACTION);
+    message.obj = new Object[]{action, info};
+    thread.getHandler().sendMessage(message);
+  }
+
+  @ReactMethod
+  public void destroyFallbackScript(String sessionId) {
+    JavaScriptThread thread = fallbackThreads.remove(sessionId);
+    if (thread == null) return;
+    thread.getHandler().sendEmptyMessage(HandlerWhat.DESTROY);
+    // Drain the destroy message before quitting so QuickJS releases its context.
+    thread.quitSafely();
   }
 }

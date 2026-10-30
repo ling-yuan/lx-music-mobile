@@ -28,6 +28,7 @@ import { checkIgnoringBatteryOptimization, checkNotificationPermission, debounce
 import { LIST_IDS } from '@/config/constant'
 import { addListMusics, removeListMusics } from '@/core/list'
 import { addDislikeInfo } from '@/core/dislikeList'
+import { state as userApiState } from '@/store/userApi'
 
 // import { checkMusicFileAvailable } from '@renderer/utils/music'
 
@@ -41,14 +42,14 @@ const createDelayNextTimeout = (delay: number) => {
     }
   }
 
-  const addDelayNextTimeout = () => {
+  const addDelayNextTimeout = (timeoutDelay = delay) => {
     clearDelayNextTimeout()
     timeout = BackgroundTimer.setTimeout(() => {
       timeout = null
       if (global.lx.isPlayedStop) return
       console.log('delay next timeout timeout', delay)
       void playNext(true)
-    }, delay)
+    }, timeoutDelay)
   }
 
   return {
@@ -96,10 +97,14 @@ const delayRetry = async(musicInfo: LX.Music.MusicInfo | LX.Download.ListItem, i
 const getMusicPlayUrl = async(musicInfo: LX.Music.MusicInfo | LX.Download.ListItem, isRefresh = false, isRetryed = false): Promise<string | null> => {
   // this.musicInfo.url = await getMusicPlayUrl(targetSong, type)
   setStatusText(global.i18n.t('player__getting_url'))
-  addLoadTimeout()
+  let toggleMusicInfo = ('progress' in musicInfo ? musicInfo.metadata.musicInfo : musicInfo).meta.toggleMusicInfo
+  // A saved alternate song and the original song each need a fallback budget.
+  const otherApiCount = settingState.setting['common.apiSource'].startsWith('user_api')
+    ? userApiState.list.filter(api => api.id != settingState.setting['common.apiSource']).length
+    : 0
+  addLoadTimeout(100000 + otherApiCount * 20000 * (toggleMusicInfo ? 2 : 1))
 
   // const type = getPlayType(settingState.setting['player.isPlayHighQuality'], musicInfo)
-  let toggleMusicInfo = ('progress' in musicInfo ? musicInfo.metadata.musicInfo : musicInfo).meta.toggleMusicInfo
 
   return (toggleMusicInfo ? getMusicUrl({
     musicInfo: toggleMusicInfo,

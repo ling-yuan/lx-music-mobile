@@ -214,7 +214,9 @@ public class QuickJS {
   }
 
   public void destroy () {
-    this.jsContext.destroy();
+    // Expired timers can still be queued when the thread quits safely.
+    this.timeoutHandler.removeCallbacksAndMessages(null);
+    if (this.jsContext != null) this.jsContext.destroy();
     this.jsContext = null;
   }
 }

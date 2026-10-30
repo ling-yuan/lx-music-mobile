@@ -11,14 +11,26 @@ import java.util.Objects;
 
 public class JsHandler extends Handler {
   private final UtilsEvent utilsEvent;
+  private final String sessionId;
 
   JsHandler(Looper looper, UtilsEvent utilsEvent) {
+    this(looper, utilsEvent, null);
+  }
+
+  JsHandler(Looper looper, UtilsEvent utilsEvent, String sessionId) {
     super(looper);
     this.utilsEvent = utilsEvent;
+    this.sessionId = sessionId;
+  }
+
+  private WritableMap createParams() {
+    WritableMap params = Arguments.createMap();
+    if (sessionId != null) params.putString("sessionId", sessionId);
+    return params;
   }
 
   private void sendInitFailedEvent(String errorMessage) {
-    WritableMap params = Arguments.createMap();
+    WritableMap params = createParams();
     params.putString("action", "init");
     params.putString("errorMessage", errorMessage);
     params.putString("data", "{ \"info\": null, \"status\": false, \"errorMessage\": \"Create JavaScript Env Failed\" }");
@@ -27,7 +39,7 @@ public class JsHandler extends Handler {
   }
 
   private void sendLogEvent(Object[] data) {
-    WritableMap params = Arguments.createMap();
+    WritableMap params = createParams();
     params.putString("action", "log");
     params.putString("type", (String) data[0]);
     params.putString("log", (String) data[1]);
@@ -35,7 +47,7 @@ public class JsHandler extends Handler {
   }
 
   private void sendActionEvent(String action, String data) {
-    WritableMap params = Arguments.createMap();
+    WritableMap params = createParams();
     params.putString("action", action);
     params.putString("data", data);
     this.utilsEvent.sendEvent(utilsEvent.API_ACTION, params);
