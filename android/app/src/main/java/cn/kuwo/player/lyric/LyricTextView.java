@@ -10,7 +10,7 @@ import android.widget.TextView;
 
 // https://github.com/Block-Network/StatusBarLyric/blob/main/app/src/main/java/statusbar/lyric/view/LyricTextView.kt
 @SuppressLint("AppCompatCustomView")
-public class LyricTextView extends TextView {
+public class LyricTextView extends KaraokeTextView {
   private boolean isStop = true;
   private float textLength = 0F;
   private float viewWidth = 0F;
@@ -30,6 +30,7 @@ public class LyricTextView extends TextView {
 
   public LyricTextView(Context context) {
     super(context);
+    setFollowWord(true);
     mStartScrollRunnable = LyricTextView.this::startScroll;
     invalidateRunnable = LyricTextView.this::invalidate;
     mPaint = getPaint();
@@ -106,6 +107,7 @@ public class LyricTextView extends TextView {
 
     gravityVertical = gravity & Gravity.VERTICAL_GRAVITY_MASK;
     gravityHorizontal = gravity & Gravity.RELATIVE_HORIZONTAL_GRAVITY_MASK;
+    super.setGravity(gravity);
 
     y = getDrawY();
     // Log.d("Lyric", "gravityVertical: " + gravityVertical + " gravityHorizontal: " + gravityHorizontal);
@@ -116,6 +118,10 @@ public class LyricTextView extends TextView {
 
   @Override
   protected void onDraw(Canvas canvas) {
+    if (hasKaraoke()) {
+      super.onDraw(canvas);
+      return;
+    }
     float mSpeed = speed;
     if (text != null) {
       Log.d("Lyric", "getHeight: " + getHeight() + " y: " + y);

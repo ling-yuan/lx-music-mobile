@@ -19,6 +19,10 @@ import { getPosition } from '@/plugins/player'
 import playerState from '@/store/player/state'
 import settingState from '@/store/setting/state'
 import { updateNowPlayingTitles } from '@/plugins/player/utils'
+import { setKaraokeLyric } from '@/utils/nativeModules/lyricDesktop'
+
+let lyricRevision = 0
+let playbackRevision = 0
 
 /**
  * init lyric
@@ -32,8 +36,11 @@ export const init = async() => {
  * @param lyric lyric str
  * @param translation lyric translation
  */
-const handleSetLyric = async(lyric: string, translation = '', romalrc = '') => {
-  lrcSetLyric(lyric, translation, romalrc)
+const handleSetLyric = async(lyric: string, translation = '', romalrc = '', wordLyric = '') => {
+  const revision = ++lyricRevision
+  await setKaraokeLyric(wordLyric)
+  if (revision != lyricRevision) return
+  lrcSetLyric(lyric, translation, romalrc, !!wordLyric)
   await setDesktopLyric(lyric, translation, romalrc)
   if (settingState.setting['player.isShowBluetoothFullLyric']) {
     void updateNowPlayingTitles({
@@ -55,6 +62,7 @@ export const handlePlay = (time: number) => {
  * pause lyric
  */
 export const pause = () => {
+  playbackRevision++
   lrcPause()
   void pauseDesktopLyric()
 }
@@ -63,6 +71,7 @@ export const pause = () => {
  * stop lyric
  */
 export const stop = () => {
+  pause()
   void handleSetLyric('')
 }
 
@@ -75,9 +84,7 @@ export const setPlaybackRate = async(playbackRate: number) => {
   await setDesktopLyricPlaybackRate(playbackRate)
   if (playerState.isPlay) {
     setTimeout(() => {
-      void getPosition().then((position) => {
-        handlePlay(position * 1000)
-      })
+      play()
     })
   }
 }
@@ -103,7 +110,10 @@ export const toggleRoma = async(isShowLyricRoma: boolean) => {
 }
 
 export const play = () => {
+  const revision = ++playbackRevision
+  const id = playerState.musicInfo.id
   void getPosition().then((position) => {
+    if (revision != playbackRevision || id != playerState.musicInfo.id || !playerState.isPlay) return
     handlePlay(position * 1000)
   })
 }
@@ -116,7 +126,9 @@ export const setLyric = async() => {
     let rlrc = ''
     if (playerState.musicInfo.tlrc) tlrc = playerState.musicInfo.tlrc
     if (playerState.musicInfo.rlrc) rlrc = playerState.musicInfo.rlrc
-    await handleSetLyric(playerState.musicInfo.lrc, tlrc, rlrc)
+    await handleSetLyric(playerState.musicInfo.lrc, tlrc, rlrc, playerState.musicInfo.lxlrc ?? '')
+  } else {
+    await handleSetLyric('')
   }
 
   if (playerState.isPlay) play()

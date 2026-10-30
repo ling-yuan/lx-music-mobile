@@ -1,6 +1,14 @@
-import { NativeModules, NativeEventEmitter } from 'react-native'
+import { NativeModules, NativeEventEmitter, Platform } from 'react-native'
 
 const { LyricModule } = NativeModules
+
+export const setKaraokeLyric = async(lyric: string): Promise<void> => {
+  if (Platform.OS == 'android') await LyricModule.setKaraokeLyric(lyric)
+}
+
+export const syncKaraoke = async(time: number, playing: boolean, rate: number): Promise<void> => {
+  if (Platform.OS == 'android') await LyricModule.syncKaraoke(time, playing, rate)
+}
 
 // export const themes = [
 //   { id: 'green', value: '#07c556' },

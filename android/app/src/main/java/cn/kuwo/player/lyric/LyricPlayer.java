@@ -273,8 +273,8 @@ public class LyricPlayer {
 
     Object tagOffset = tags.get("offset");
     if (tagOffset == null) tagOffset = 0;
-    performanceTime = getNow() - (int) tagOffset - offset;
-    startPlayTime = curTime;
+    performanceTime = getNow();
+    startPlayTime = curTime + (int) tagOffset + (KaraokeTiming.hasLines() ? 0 : offset);
 
     curLineNum = findCurLineNum(getCurrentTime()) - 1;
 

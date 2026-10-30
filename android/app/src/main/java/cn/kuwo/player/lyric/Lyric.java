@@ -144,10 +144,12 @@ public class Lyric extends LyricPlayer {
     if (lineNum >= 0 && lineNum < lines.size()) {
       HashMap line = (HashMap) lines.get(lineNum);
       if (line != null) {
+        if (lyricView != null) lyricView.setLyricTime((int) line.get("time"));
         setCurrentLyric((String) line.get("text"), (ArrayList<String>) line.get("extendedLyrics"));
         return;
       }
     }
+    if (lyricView != null) lyricView.setLyricTime(-1);
     setCurrentLyric("", new ArrayList<>(0));
   }
 
@@ -221,8 +223,6 @@ public class Lyric extends LyricPlayer {
 
   public void pauseLyric() {
     pause();
-    if (!isRunPlayer) return;
-    handleGetCurrentLyric(-1);
   }
 
   public void lockLyric() {

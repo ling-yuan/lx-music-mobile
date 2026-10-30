@@ -73,6 +73,7 @@ public class LyricView extends Activity implements View.OnTouchListener {
   private OrientationEventListener orientationEventListener = null;
 
   final Handler fixViewPositionHandler;
+  private int currentLyricTime = -1;
   final Runnable fixViewPositionRunnable = this::updateViewPosition;
 
   LyricView(ReactApplicationContext reactContext, LyricEvent lyricEvent) {
@@ -253,6 +254,8 @@ public class LyricView extends Activity implements View.OnTouchListener {
     textView.setText(currentLyric);
 
     textView.setTextColor(parseColor(playedColor));
+    textView.setKaraokeColors(0xff888888, parseColor(playedColor));
+    textView.setLyricTime(currentLyricTime);
     textView.setShadowColor(parseColor(shadowColor));
     textView.setAlpha(alpha);
     textView.setTextSize(textSize);
@@ -385,6 +388,12 @@ public class LyricView extends Activity implements View.OnTouchListener {
     }
     if (textView == null) return;
     textView.setText(text);
+    textView.setLyricTime(currentLyricTime);
+  }
+
+  public void setLyricTime(int time) {
+    currentLyricTime = time;
+    if (textView != null) textView.setLyricTime(time);
   }
 
   public void setMaxLineNum(int maxLineNum) {
@@ -518,6 +527,7 @@ public class LyricView extends Activity implements View.OnTouchListener {
     this.shadowColor = shadowColor;
     if (textView == null) return;
     textView.setTextColor(parseColor(playedColor));
+    textView.setKaraokeColors(0xff888888, parseColor(playedColor));
     textView.setShadowColor(parseColor(shadowColor));
     // windowManager.updateViewLayout(textView, layoutParams);
   }

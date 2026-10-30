@@ -101,6 +101,20 @@ public class LyricModule extends ReactContextBaseJavaModule {
   }
 
   @ReactMethod
+  public void setKaraokeLyric(String text, Promise promise) {
+    KaraokeTiming.setLyric(text);
+    KaraokeTextView.refreshViews();
+    promise.resolve(null);
+  }
+
+  @ReactMethod
+  public void syncKaraoke(double time, boolean playing, double rate, Promise promise) {
+    KaraokeTiming.sync(time, playing, rate);
+    KaraokeTextView.refreshViews();
+    promise.resolve(null);
+  }
+
+  @ReactMethod
   public void toggleTranslation(boolean isShowTranslation, Promise promise) {
     this.isShowTranslation = isShowTranslation;
     if (lyric != null) lyric.toggleTranslation(isShowTranslation);
@@ -124,6 +138,8 @@ public class LyricModule extends ReactContextBaseJavaModule {
   @ReactMethod
   public void pause(Promise promise) {
     Log.d("Lyric", "play pause");
+    KaraokeTiming.freeze();
+    KaraokeTextView.refreshViews();
     if (lyric != null) lyric.pauseLyric();
     promise.resolve(null);
   }

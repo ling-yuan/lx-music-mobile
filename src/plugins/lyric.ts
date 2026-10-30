@@ -13,6 +13,7 @@ const lrcTools = {
   playHooks: [] as PlayHook[],
   setLyricHooks: [] as SetLyricHook[],
   isPlay: false,
+  playbackRate: 1,
   isShowTranslation: false,
   isShowRoma: false,
   lyricText: '',
@@ -67,7 +68,8 @@ export const init = async() => {
   lrcTools.init()
 }
 
-export const setLyric = (lyric: string, translation?: string, romalrc?: string) => {
+export const setLyric = (lyric: string, translation?: string, romalrc?: string, hasWordTiming = false) => {
+  lrcTools.lrc!.offset = hasWordTiming ? 0 : 100
   lrcTools.isPlay = false
   lrcTools.lyricText = lyric
   lrcTools.translationText = translation
@@ -75,6 +77,7 @@ export const setLyric = (lyric: string, translation?: string, romalrc?: string) 
   lrcTools.setLyric()
 }
 export const setPlaybackRate = (playbackRate: number) => {
+  lrcTools.playbackRate = playbackRate
   lrcTools.lrc!.setPlaybackRate(playbackRate)
 }
 export const toggleTranslation = (isShow: boolean) => {
@@ -90,7 +93,9 @@ export const toggleRoma = (isShow: boolean) => {
 export const play = (time: number) => {
   // console.log(time)
   lrcTools.isPlay = true
-  lrcTools.lrc!.play(time)
+  const lrc = lrcTools.lrc!
+  // The parser scales its offsets by playback rate; keep lyric offsets in media time.
+  lrc.play(time + (lrc.tags.offset + lrc.offset) * (1 - lrcTools.playbackRate))
 }
 export const pause = () => {
   // console.log('pause')
