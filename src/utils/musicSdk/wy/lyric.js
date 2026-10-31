@@ -174,6 +174,7 @@ const parseTools = {
       tlyric: '',
       rlyric: '',
       lxlyric: '',
+      wordLyricChecked: true,
     }
     if (ylrc) {
       let lines = this.parseHeaderInfo(ylrc)
