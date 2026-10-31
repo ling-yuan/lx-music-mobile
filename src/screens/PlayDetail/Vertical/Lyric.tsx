@@ -146,12 +146,13 @@ export default () => {
     if (index < 0) return
     if (flatListRef.current) {
       // console.log('handleScrollToActive', index)
-      if (scrollInfoRef.current && lineRef.current.line - lineRef.current.prevLine == 1) {
-        let offset = listLayoutInfoRef.current.spaceHeight
-        for (let line = 0; line < index; line++) {
-          offset += listLayoutInfoRef.current.lineHeights[line]
-        }
-        offset += (listLayoutInfoRef.current.lineHeights[line] ?? 0) / 2
+      let offset = listLayoutInfoRef.current.spaceHeight
+      for (let lineNum = 0; lineNum < index; lineNum++) {
+        offset += listLayoutInfoRef.current.lineHeights[lineNum]
+      }
+      offset += listLayoutInfoRef.current.lineHeights[index] / 2
+      // Newly loaded lyrics may not have layout measurements yet.
+      if (scrollInfoRef.current && lineRef.current.line - lineRef.current.prevLine == 1 && Number.isFinite(offset)) {
         try {
           scrollCancelRef.current = scrollTo(flatListRef.current, scrollInfoRef.current, offset - scrollInfoRef.current.layoutMeasurement.height * 0.42, 600, () => {
             scrollCancelRef.current = null
@@ -278,6 +279,10 @@ export default () => {
   }, [isShowLyricProgressSetting])
 
   const handleScrollToIndexFailed: FlatListType['onScrollToIndexFailed'] = (info) => {
+    flatListRef.current?.scrollToOffset({
+      offset: listLayoutInfoRef.current.spaceHeight + info.averageItemLength * info.index,
+      animated: false,
+    })
     void wait().then(() => {
       handleScrollToActive(info.index)
     })
