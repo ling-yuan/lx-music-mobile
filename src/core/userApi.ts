@@ -20,7 +20,7 @@ export const destroyUserApi = () => {
   destroy()
 }
 
-export const getOtherUserApiMusicUrl = async(musicInfo: LX.Music.MusicInfo, qualitys: LX.Quality[], apiId: string): Promise<{ url: string, type: LX.Quality }> => {
+export const getOtherUserApiMusicUrl = async(musicInfo: LX.Music.MusicInfo, qualitys: LX.Quality[], apiId: string, onToggleApi?: (name: string) => void): Promise<{ url: string, type: LX.Quality }> => {
   if (!apiId.startsWith('user_api')) throw new Error('source not supported')
   // Snapshot the list so imports or removals do not reorder an in-flight fallback.
   const candidates = state.list.filter(api => api.id != apiId)
@@ -38,6 +38,7 @@ export const getOtherUserApiMusicUrl = async(musicInfo: LX.Music.MusicInfo, qual
       try {
         const script = await getUserApiScript(api.id)
         checkCanceled()
+        onToggleApi?.(api.name)
         const result = await getFallbackMusicUrl({ ...api, script }, musicInfo, qualitys, controller.signal)
         checkCanceled()
         return result

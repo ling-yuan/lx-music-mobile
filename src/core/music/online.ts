@@ -46,7 +46,7 @@ export const getMusicUrl = async({ musicInfo, quality, isRefresh, allowToggleSou
   quality?: LX.Quality
   isRefresh: boolean
   allowToggleSource?: boolean
-  onToggleSource?: (musicInfo?: LX.Music.MusicInfoOnline) => void
+  onToggleSource?: (musicInfo?: LX.Music.MusicInfoOnline, apiName?: string) => void
   onResolvedSource?: (musicInfo: LX.Music.MusicInfoOnline) => void
 }): Promise<string> => {
   // if (!musicInfo._types[type]) {

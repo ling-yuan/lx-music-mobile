@@ -289,7 +289,7 @@ export const handleGetOnlineMusicUrl = async({ musicInfo, quality, onToggleSourc
   quality?: LX.Quality
   isRefresh: boolean
   allowToggleSource: boolean
-  onToggleSource: (musicInfo?: LX.Music.MusicInfoOnline) => void
+  onToggleSource: (musicInfo?: LX.Music.MusicInfoOnline, apiName?: string) => void
 }): Promise<{
   url: string
   musicInfo: LX.Music.MusicInfoOnline
@@ -323,7 +323,7 @@ export const handleGetOnlineMusicUrl = async({ musicInfo, quality, onToggleSourc
         : [...TRY_QUALITYS_LIST.slice(TRY_QUALITYS_LIST.indexOf(preferredQuality as TryQualityType))
             .filter(item => musicInfo.meta._qualitys[item]), '128k']
     try {
-      const result = await getOtherUserApiMusicUrl(toOldMusicInfo(musicInfo) as LX.Music.MusicInfo, otherApiQualitys, apiId)
+      const result = await getOtherUserApiMusicUrl(toOldMusicInfo(musicInfo) as LX.Music.MusicInfo, otherApiQualitys, apiId, name => { onToggleSource(musicInfo, name) })
       return { musicInfo, url: result.url, quality: result.type, isFromCache: false }
     } catch (fallbackError) {
       if (settingState.setting['common.apiSource'] != apiId || (fallbackError as Error).message == requestMsg.cancelRequest) throw fallbackError

@@ -121,8 +121,26 @@ const delayRetry = async(musicInfo: LX.Music.MusicInfo | LX.Download.ListItem, i
 }
 const getMusicPlayUrl = async(musicInfo: LX.Music.MusicInfo | LX.Download.ListItem, isRefresh = false, isRetryed = false): Promise<string | null> => {
   // this.musicInfo.url = await getMusicPlayUrl(targetSong, type)
-  setStatusText(global.i18n.t('player__getting_url'))
-  let toggleMusicInfo = ('progress' in musicInfo ? musicInfo.metadata.musicInfo : musicInfo).meta.toggleMusicInfo
+  const originalMusicInfo = 'progress' in musicInfo ? musicInfo.metadata.musicInfo : musicInfo
+  const getSourceName = (source: LX.Source) => global.i18n.t(`source_${settingState.setting['common.sourceNameType']}_${source}`)
+  const apiName = userApiState.list.find(api => api.id == settingState.setting['common.apiSource'])?.name
+  setStatusText(isRefresh
+    ? global.i18n.t('player__retry_source', { name: apiName ?? getSourceName(originalMusicInfo.source) })
+    : global.i18n.t('player__getting_url'))
+  let toggleMusicInfo = originalMusicInfo.meta.toggleMusicInfo
+  const onToggleSource = (target?: LX.Music.MusicInfoOnline, targetApiName?: string) => {
+    if (global.lx.isPlayedStop || diffCurrentMusicInfo(musicInfo)) return
+    if (targetApiName) {
+      setStatusText(global.i18n.t('player__switching_api', {
+        name: targetApiName,
+        source: getSourceName(target?.source ?? originalMusicInfo.source),
+      }))
+    } else if (target) {
+      setStatusText(global.i18n.t('player__switching_source', { source: getSourceName(target.source) }))
+    } else {
+      setStatusText(global.i18n.t('toggle_source_try'))
+    }
+  }
   // A saved alternate song and the original song each need a fallback budget.
   const otherApiCount = settingState.setting['common.apiSource'].startsWith('user_api')
     ? userApiState.list.filter(api => api.id != settingState.setting['common.apiSource']).length
@@ -135,6 +153,7 @@ const getMusicPlayUrl = async(musicInfo: LX.Music.MusicInfo | LX.Download.ListIt
     musicInfo: toggleMusicInfo,
     isRefresh,
     allowToggleSource: false,
+    onToggleSource,
     onResolvedSource(target) {
       if (!diffCurrentMusicInfo(musicInfo)) resolvedLyricSource = { originalId: musicInfo.id, musicInfo: target }
     },
@@ -142,12 +161,9 @@ const getMusicPlayUrl = async(musicInfo: LX.Music.MusicInfo | LX.Download.ListIt
     return getMusicUrl({
       musicInfo,
       isRefresh,
+      onToggleSource,
       onResolvedSource(target) {
         if (!diffCurrentMusicInfo(musicInfo)) resolvedLyricSource = { originalId: musicInfo.id, musicInfo: target }
-      },
-      onToggleSource(mInfo) {
-        if (diffCurrentMusicInfo(musicInfo)) return
-        setStatusText(global.i18n.t('toggle_source_try'))
       },
     })
   }).then(url => {

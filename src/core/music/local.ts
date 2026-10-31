@@ -69,7 +69,7 @@ const getOtherSourceByLocal = async<T>(musicInfo: LX.Music.MusicInfoLocal, handl
 export const getMusicUrl = async({ musicInfo, isRefresh, allowToggleSource = true, onToggleSource = () => {}, onResolvedSource }: {
   musicInfo: LX.Music.MusicInfoLocal
   isRefresh: boolean
-  onToggleSource?: (musicInfo?: LX.Music.MusicInfoOnline) => void
+  onToggleSource?: (musicInfo?: LX.Music.MusicInfoOnline, apiName?: string) => void
   allowToggleSource?: boolean
   onResolvedSource?: (musicInfo: LX.Music.MusicInfoOnline) => void
 }): Promise<string> => {

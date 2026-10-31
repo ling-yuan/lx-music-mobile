@@ -11,7 +11,7 @@ import { buildLyricInfo, getCachedLyricInfo } from './utils'
 export const getMusicUrl = async({ musicInfo, isRefresh, allowToggleSource = true, onToggleSource = () => {}, onResolvedSource }: {
   musicInfo: LX.Download.ListItem
   isRefresh: boolean
-  onToggleSource?: (musicInfo?: LX.Music.MusicInfoOnline) => void
+  onToggleSource?: (musicInfo?: LX.Music.MusicInfoOnline, apiName?: string) => void
   allowToggleSource?: boolean
   onResolvedSource?: (musicInfo: LX.Music.MusicInfoOnline) => void
 }): Promise<string> => {

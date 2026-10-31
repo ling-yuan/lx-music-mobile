@@ -99,7 +99,6 @@ export default () => {
         if (playerState.playMusicInfo.musicInfo !== musicInfo) return
         retryNum++
         setMusicUrl(playerState.playMusicInfo.musicInfo, true)
-        setStatusText(global.i18n.t('player__refresh_url'))
       })
       return
     }
