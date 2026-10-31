@@ -127,6 +127,8 @@ export const getCachedLyricInfo = async(musicInfo: LX.Music.MusicInfo): Promise<
   let lrcInfo = await getStoreLyric(musicInfo)
   // lrcInfo = {}
   if (existTimeExp.test(lrcInfo.lyric) && lrcInfo.tlyric != null) {
+    // Upgrade old line-only NetEase caches once, without retrying songs that lack YRC.
+    if (musicInfo.source == 'wy' && !lrcInfo.lxlyric && !lrcInfo.wordLyricChecked) return null
     // if (musicInfo.lrc.startsWith('\ufeff[id:$00000000]')) {
     //   let str = musicInfo.lrc.replace('\ufeff[id:$00000000]\n', '')
     //   commit('setLrc', { musicInfo, lyric: str, tlyric: musicInfo.tlrc, lxlyric: musicInfo.tlrc })

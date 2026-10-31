@@ -94,6 +94,8 @@ declare namespace LX {
       rlyric?: string | null
       // 逐字歌词
       lxlyric?: string | null
+      // 已检查逐字歌词，包括平台未提供逐字歌词的情况
+      wordLyricChecked?: boolean
     }
 
     interface LyricInfoSave {
